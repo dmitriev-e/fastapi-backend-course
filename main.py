@@ -45,21 +45,21 @@ async def get_hotels(
 @app.post("/hotels")
 async def create_hotel(
         name: str = Body(embed=True),
-        stars: int = Body(embed=True, default=0),
+        stars: int = Body(embed=True, default=0, gt=0, lt=6),
         city: str = Body(embed=True),
 ) -> dict:
     """ Create new hotel """
 
     new_hotel = {"id": len(hotels) + 1, "name": name, "stars": stars, "city": city}
     hotels.append(new_hotel)
-    return {"status": 200, "message": "Hotel created", "hotel": new_hotel}
+    return {"status": 200, "message": "Hotel created", "data": new_hotel}
 
 
 @app.put("/hotels/{hotel_id}")
 async def edit_hotel(
         hotel_id: int,
         name: str = Body(embed=True),
-        stars: int = Body(embed=True),
+        stars: int = Body(embed=True, gt=0, lt=6),
         city: str = Body(embed=True),
 ) -> dict:
     """ Update hotel with full parameters list """
@@ -69,7 +69,7 @@ async def edit_hotel(
             hotel["name"] = name
             hotel["stars"] = stars
             hotel["city"] = city
-            return {"status": 200, "message": f"Hotel {hotel_id=} updated", "hotel": hotel}
+            return {"status": 200, "message": f"Hotel {hotel_id=} updated", "data": hotel}
         else:
             continue
     return {"status": 404, "message": f"Hotel {hotel_id=} not found"}
@@ -79,7 +79,7 @@ async def edit_hotel(
 async def update_hotel(
         hotel_id: int,
         name: str | None = Body(embed=True, default=None),
-        stars: int | None = Body(embed=True, default=None),
+        stars: int | None = Body(embed=True, default=0, gt=0, lt=6),
         city: str | None = Body(embed=True, default=None),
 ) -> dict:
     """ Partial Update hotel by ID and partial parameters list """
@@ -92,7 +92,7 @@ async def update_hotel(
                 hotel["stars"] = stars
             if city:
                 hotel["city"] = city
-            return {"status": 200, "message": f"Hotel {hotel_id=} updated", "hotel": hotel}
+            return {"status": 200, "message": f"Hotel {hotel_id=} updated", "data": hotel}
         else:
             continue
     return {"status": 404, "message": f"Hotel {hotel_id=} not found"}

@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Query, Body
 import logging
 
+from schemas.hotels import Hotel, HotelPartialData, HotelCreateData
+
 logger = logging.getLogger("uvicorn")
 
 router = APIRouter(prefix="/hotels", tags=["Hotels"])
@@ -12,22 +14,31 @@ hotels = [
     {"id": 3, "name": "The Sheraton", "city": "Los Angeles", "stars": 3},
     {"id": 4, "name": "The Hilton", "city": "Chicago", "stars": 5},
     {"id": 5, "name": "The Holiday Inn", "city": "Miami", "stars": 3},
+    {"id": 6, "name": "The Hyatt Regency", "city": "Las Vegas", "stars": 4},
+    {"id": 7, "name": "The Park Hyatt", "city": "Tokyo", "stars": 5},
+    {"id": 8, "name": "The Grand Hyatt", "city": "Seoul", "stars": 4},
+    {"id": 9, "name": "The InterContinental", "city": "London", "stars": 5},
+    {"id": 10, "name": "The Sofitel", "city": "Paris", "stars": 4},
+    {"id": 11, "name": "The Marriott", "city": "Berlin", "stars": 4},
+    {"id": 12, "name": "The Renaissance", "city": "Rome", "stars": 4},
+    {"id": 13, "name": "The Courtyard by Marriott", "city": "Amsterdam", "stars": 3},
+    {"id": 14, "name": "The W Hotel", "city": "Barcelona", "stars": 5},
+    {"id": 15, "name": "The Sheraton", "city": "Stockholm", "stars": 4},
 ]
-
 
 @router.get("/")
 async def get_hotels(
-        id: int | None = Query(default=None, description="ID of the hotel"),
+        hotel_id: int | None = Query(default=None, description="ID of the hotel"),
         name: str | None = Query(default=None, description="Name of the hotel"),
         city: str | None = Query(default=None, description="City of the hotel"),
-) -> list:
+) -> list[Hotel]:
     """ Get list of hotels """
 
     return_data = []
     for hotel in hotels:
         if name and name.lower() not in hotel["name"].lower():
             continue
-        if id and id != hotel["id"]:
+        if hotel_id and hotel_id != hotel["id"]:
             continue
         if city and city.lower() not in hotel["city"].lower():
             continue
@@ -36,14 +47,15 @@ async def get_hotels(
 
 
 @router.post("/")
-async def create_hotel(
-        name: str = Body(embed=True),
-        stars: int = Body(embed=True, default=0, gt=0, lt=6),
-        city: str = Body(embed=True),
-) -> dict:
+async def create_hotel(hotel_data: HotelCreateData) -> dict:
     """ Create new hotel """
 
-    new_hotel = {"id": len(hotels) + 1, "name": name, "stars": stars, "city": city}
+    new_hotel = Hotel(
+        id = max([hotel["id"] for hotel in hotels]) + 1,
+        name = hotel_data.name,
+        stars = hotel_data.stars,
+        city = hotel_data.city,
+    )
     hotels.append(new_hotel)
     return {"status": 200, "message": "Hotel created", "data": new_hotel}
 
@@ -51,17 +63,15 @@ async def create_hotel(
 @router.put("/{hotel_id}")
 async def edit_hotel(
         hotel_id: int,
-        name: str = Body(embed=True),
-        stars: int = Body(embed=True, gt=0, lt=6),
-        city: str = Body(embed=True),
+        hotel_data: HotelCreateData
 ) -> dict:
     """ Update hotel with full parameters list """
 
     for hotel in hotels:
         if hotel["id"] == hotel_id:
-            hotel["name"] = name
-            hotel["stars"] = stars
-            hotel["city"] = city
+            hotel["name"] = hotel_data.name
+            hotel["stars"] = hotel_data.stars
+            hotel["city"] = hotel_data.city
             return {"status": 200, "message": f"Hotel {hotel_id=} updated", "data": hotel}
         else:
             continue
@@ -71,20 +81,18 @@ async def edit_hotel(
 @router.patch("/{hotel_id}")
 async def update_hotel(
         hotel_id: int,
-        name: str | None = Body(embed=True, default=None),
-        stars: int | None = Body(embed=True, default=0, gt=0, lt=6),
-        city: str | None = Body(embed=True, default=None),
+        hotel_data: HotelPartialData
 ) -> dict:
     """ Partial Update hotel by ID and partial parameters list """
 
     for hotel in hotels:
         if hotel["id"] == hotel_id:
-            if name:
-                hotel["name"] = name
-            if stars:
-                hotel["stars"] = stars
-            if city:
-                hotel["city"] = city
+            if hotel_data.name:
+                hotel["name"] = hotel_data.name
+            if hotel_data.stars:
+                hotel["stars"] = hotel_data.stars
+            if hotel_data.city:
+                hotel["city"] = hotel_data.city
             return {"status": 200, "message": f"Hotel {hotel_id=} updated", "data": hotel}
         else:
             continue

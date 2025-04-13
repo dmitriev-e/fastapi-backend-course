@@ -23,6 +23,7 @@ hotels = [
     Hotel(id=13, name="The Courtyard by Marriott", city="Amsterdam", stars=3),
     Hotel(id=14, name="The W Hotel", city="Barcelona", stars=5),
     Hotel(id=15, name="The Sheraton", city="Stockholm", stars=4),
+    Hotel(id=16, name="The Hilton", city="Oslo", stars=3),
 ]
 
 @router.get("/")
@@ -30,6 +31,8 @@ async def get_hotels(
         hotel_id: int | None = Query(default=None, description="ID of the hotel"),
         name: str | None = Query(default=None, description="Name of the hotel"),
         city: str | None = Query(default=None, description="City of the hotel"),
+        page: int = Query(default=1, description="Page number", ge=1),
+        per_page: int = Query(default=3, description="Number of items per page", ge=1),
 ) -> list[Hotel]:
     """ Get list of hotels """
 
@@ -42,7 +45,7 @@ async def get_hotels(
         if city and city.lower() not in hotel.city.lower():
             continue
         return_data.append(hotel)
-    return return_data
+    return return_data[(page - 1) * per_page:page * per_page]
 
 
 @router.post("/")

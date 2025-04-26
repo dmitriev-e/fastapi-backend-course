@@ -2,7 +2,7 @@ from fastapi import APIRouter, Query, Body
 import logging
 
 from fastapi.openapi.models import Example
-from sqlalchemy.dialects.mysql import insert
+from sqlalchemy import insert, update, delete, select
 
 from src.db import async_session_maker
 from src.schemas.hotels import Hotel, HotelPartialData, HotelCreateData
@@ -19,36 +19,32 @@ async def get_hotels(
         location: str | None = Query(default=None, description="Location of the hotel"),
         page: int | None = Query(default=1, description="Page number", ge=1),
         per_page: int | None = Query(default=3, description="Number of items per page", ge=1, le=100),
-) -> list[Hotel]:
+):
     """ Get list of hotels """
 
     async with async_session_maker() as session:
-        pass
-    hotels = []
-    return_data = []
-    for hotel in hotels:
-        if title and title.lower() not in hotel.name.lower():
-            continue
-        if hotel_id and hotel_id != hotel.id:
-            continue
-        if location and location.lower() not in hotel.city.lower():
-            continue
-        return_data.append(hotel)
-    if page and per_page:
-        return return_data[(page - 1) * per_page:page * per_page]
-    else:
-        return return_data
+        hotel_query = select(HotelsORM)
+        query_result = await session.execute(hotel_query)
+        hotels = query_result.scalars().all()
+
+        return hotels
+
+
+    # if page and per_page:
+    #     return return_data[(page - 1) * per_page:page * per_page]
+    # else:
+    #     return return_data
 
 
 @router.post("/")
 async def create_hotel(hotel_data: HotelCreateData = Body(openapi_examples={
     "City 1": Example(
         summary = "The Ritz-Carlton",
-        value = {"title": "The Ritz-Carlton", "stars": 5, "locaiton": "New York"}
+        value = {"title": "The Ritz-Carlton", "stars": 5, "location": "New York"}
     ),
     "City 2": Example(
         summary = "The Westin",
-        value = {"title": "The Westin", "stars": 4, "locaiton": "San Francisco"}
+        value = {"title": "The Westin", "stars": 4, "location": "San Francisco"}
     )
 }) ) -> dict:
     """ Create new hotel in Database"""

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Query, Body
 import logging
 
 from fastapi.openapi.models import Example
-from sqlalchemy import insert, update, delete, select
+from sqlalchemy import insert, update, delete, select, or_
 
 from src.db import async_session_maker
 from src.schemas.hotels import Hotel, HotelPartialData, HotelCreateData
@@ -23,8 +23,15 @@ async def get_hotels(
     """ Get list of hotels """
 
     async with async_session_maker() as session:
-        hotel_query = select(HotelsORM)
-        query_result = await session.execute(hotel_query)
+        query = select(HotelsORM)
+        # ID
+        query = query.filter_by(id=hotel_id) if hotel_id else query
+        # Filters
+        query = query.filter(HotelsORM.title.ilike(f"%{title}%")) if title else query
+        query = query.filter(HotelsORM.location.ilike(f"%{location}%")) if location else query
+        # LIMIT and OFFSET
+        query = query.offset((page - 1) * per_page).limit(per_page)
+        query_result = await session.execute(query)
         hotels = query_result.scalars().all()
 
         return hotels

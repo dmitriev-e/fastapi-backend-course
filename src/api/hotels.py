@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Query, Body
+from fastapi import APIRouter, Query
 import logging
 
-from schemas.hotels import Hotel, HotelPartialData, HotelCreateData
+from src.schemas.hotels import Hotel, HotelPartialData, HotelCreateData
 
 logger = logging.getLogger("uvicorn")
 
@@ -31,8 +31,8 @@ async def get_hotels(
         hotel_id: int | None = Query(default=None, description="ID of the hotel"),
         name: str | None = Query(default=None, description="Name of the hotel"),
         city: str | None = Query(default=None, description="City of the hotel"),
-        page: int = Query(default=1, description="Page number", ge=1),
-        per_page: int = Query(default=3, description="Number of items per page", ge=1),
+        page: int | None = Query(default=1, description="Page number", ge=1),
+        per_page: int | None = Query(default=3, description="Number of items per page", ge=1, le=100),
 ) -> list[Hotel]:
     """ Get list of hotels """
 
@@ -45,7 +45,10 @@ async def get_hotels(
         if city and city.lower() not in hotel.city.lower():
             continue
         return_data.append(hotel)
-    return return_data[(page - 1) * per_page:page * per_page]
+    if page and per_page:
+        return return_data[(page - 1) * per_page:page * per_page]
+    else:
+        return return_data
 
 
 @router.post("/")

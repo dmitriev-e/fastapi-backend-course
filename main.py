@@ -1,7 +1,7 @@
 import uvicorn
 import logging
 from fastapi import FastAPI
-from hotels import router as router_hotels
+from src.api.hotels import router as router_hotels
 
 
 logger = logging.getLogger("uvicorn")

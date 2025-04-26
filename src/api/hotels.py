@@ -15,8 +15,8 @@ router = APIRouter(prefix="/hotels", tags=["Hotels"])
 @router.get("/")
 async def get_hotels(
         hotel_id: int | None = Query(default=None, description="ID of the hotel"),
-        title: str | None = Query(default=None, description="Title of the hotel"),
-        location: str | None = Query(default=None, description="Location of the hotel"),
+        title: str | None = Query(default=None, description="Title of the hotel", min_length=2),
+        location: str | None = Query(default=None, description="Location of the hotel", min_length=2),
         page: int | None = Query(default=1, description="Page number", ge=1),
         per_page: int | None = Query(default=3, description="Number of items per page", ge=1, le=100),
 ):
@@ -27,8 +27,8 @@ async def get_hotels(
         # ID
         query = query.filter_by(id=hotel_id) if hotel_id else query
         # Filters
-        query = query.filter(HotelsORM.title.ilike(f"%{title}%")) if title else query
-        query = query.filter(HotelsORM.location.ilike(f"%{location}%")) if location else query
+        query = query.filter(HotelsORM.title.icontains(title)) if title else query
+        query = query.filter(HotelsORM.location.icontains(location)) if location else query
         # LIMIT and OFFSET
         query = query.offset((page - 1) * per_page).limit(per_page)
         query_result = await session.execute(query)

@@ -1,18 +1,20 @@
+from typing import Optional, get_type_hints
+
 from pydantic import BaseModel, Field
 
 
-class Hotel(BaseModel):
+class HotelBaseModel(BaseModel):
+    title: str = Field(description="Name of the hotel", max_length=100)
+    location: str = Field(description="Location of the hotel", max_length=200)
+    stars: int = Field(description="Stars of the hotel", ge=0, le=5)
+
+class Hotel(HotelBaseModel):
     id: int = Field(description="ID of the hotel")
-    name: str = Field(description="Name of the hotel")
-    city: str = Field(description="City of the hotel")
-    stars: int = Field(description="Stars of the hotel", ge=0, le=5)
 
-class HotelCreateData(BaseModel):
-    name: str = Field(description="Name of the hotel")
-    city: str = Field(description="City of the hotel")
-    stars: int = Field(description="Stars of the hotel", ge=0, le=5)
+class HotelCreateData(HotelBaseModel):
+    pass
 
-class HotelPartialData(BaseModel):
-    name: str | None = Field(None, description="Name of the hotel")
-    city: str | None = Field(None, description="City of the hotel")
-    stars: int | None = Field(None, description="Stars of the hotel", ge=0, le=5)
+class HotelPartialData(HotelBaseModel):
+    title: Optional[get_type_hints(HotelBaseModel)["title"]] = None
+    location: Optional[get_type_hints(HotelBaseModel)["location"]] = None
+    stars: Optional[get_type_hints(HotelBaseModel)["stars"]] = None

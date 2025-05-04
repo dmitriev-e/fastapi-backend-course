@@ -6,7 +6,7 @@ from sqlalchemy import insert, update, delete, select, or_
 
 from src.db import async_session_maker
 from src.schemas.hotels import Hotel, HotelPartialData, HotelCreateData
-from src.models.hotels import HotelsORM
+from src.repositories.hotels import HotelsRepository
 
 logger = logging.getLogger("uvicorn")
 
@@ -21,26 +21,14 @@ async def get_hotels(
         per_page: int | None = Query(default=3, description="Number of items per page", ge=1, le=100),
 ):
     """ Get list of hotels """
-
     async with async_session_maker() as session:
-        query = select(HotelsORM)
-        # ID
-        query = query.filter_by(id=hotel_id) if hotel_id else query
-        # Filters
-        query = query.filter(HotelsORM.title.icontains(title)) if title else query
-        query = query.filter(HotelsORM.location.icontains(location)) if location else query
-        # LIMIT and OFFSET
-        query = query.offset((page - 1) * per_page).limit(per_page)
-        query_result = await session.execute(query)
-        hotels = query_result.scalars().all()
-
-        return hotels
-
-
-    # if page and per_page:
-    #     return return_data[(page - 1) * per_page:page * per_page]
-    # else:
-    #     return return_data
+        return await HotelsRepository(session).get_all(
+            hotel_id=hotel_id, 
+            title=title, 
+            location=location,
+            limit=per_page,
+            offset=(page - 1) * per_page
+        )
 
 
 @router.post("/")
@@ -57,10 +45,8 @@ async def create_hotel(hotel_data: HotelCreateData = Body(openapi_examples={
     """ Create new hotel in Database"""
 
     async with async_session_maker() as session:
-        add_hotel_stmt = insert(HotelsORM).values(**hotel_data.model_dump())
-        new_hotel_id = await session.execute(add_hotel_stmt)
         await session.commit()
-    return {"status": 200, "message": f"Hotel {new_hotel_id} created"}
+    return {"status": 200, "message": f"Hotel created", "data": hotel_added}
 
 
 @router.put("/{hotel_id}")

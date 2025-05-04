@@ -5,7 +5,7 @@ from src.db import Base
 
 class HotelsORM(Base):
     __tablename__ = "hotels"
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String(100))
     stars: Mapped[int]
     location: Mapped[str] = mapped_column(String(200))

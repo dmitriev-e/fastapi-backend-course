@@ -1,5 +1,4 @@
 from typing import Optional, get_type_hints
-
 from pydantic import BaseModel, Field
 
 
@@ -10,6 +9,7 @@ class HotelBaseModel(BaseModel):
 
 class Hotel(HotelBaseModel):
     id: int = Field(description="ID of the hotel")
+    model_config = {'from_attributes': True}
 
 class HotelCreateData(HotelBaseModel):
     pass

@@ -45,27 +45,27 @@ async def create_hotel(hotel_data: HotelCreateData = Body(openapi_examples={
     """ Create new hotel in Database"""
 
     async with async_session_maker() as session:
-        hotel_added = await HotelsRepository(session).add(hotel_data.model_dump())
+        hotel_added = await HotelsRepository(session).add(hotel_data)
         await session.commit()
-    return {"status": 200, "message": f"Hotel created", "data": hotel_added}
+    return {"status": "OK", "message": f"Hotel created", "data": Hotel.model_validate(hotel_added)}
 
 
 @router.put("/{hotel_id}")
 async def edit_hotel(
         hotel_id: int,
-        hotel_data: HotelCreateData
-) -> dict:
+        hotel_data: HotelCreateData = Body(openapi_examples={
+            "Hotel 1": Example(
+                summary = "Update hotel with new title",
+                value = {"title": "The Grand Hotel", "stars": 5, "location": "Los Angeles"}
+            ),
+        })
+    ) -> dict:
     """ Update hotel with full parameters list """
 
-    for hotel in hotels:
-        if hotel.id == hotel_id:
-            hotel.name = hotel_data.name
-            hotel.stars = hotel_data.stars
-            hotel.city = hotel_data.city
-            return {"status": 200, "message": f"Hotel {hotel_id=} updated", "data": hotel}
-        else:
-            continue
-    return {"status": 404, "message": f"Hotel {hotel_id=} not found"}
+    async with async_session_maker() as session:
+        await HotelsRepository(session).edit(hotel_data, id=hotel_id)
+        await session.commit()
+    return {"status": "OK", "message": f"Hotel {hotel_id=} updated", "data": hotel_data}
 
 
 @router.patch("/{hotel_id}")
@@ -83,22 +83,17 @@ async def update_hotel(
                 hotel.stars = hotel_data.stars
             if hotel_data.city:
                 hotel.city = hotel_data.city
-            return {"status": 200, "message": f"Hotel {hotel_id=} updated", "data": hotel}
+            return {"status": "OK", "message": f"Hotel {hotel_id=} updated", "data": hotel}
         else:
             continue
-    return {"status": 404, "message": f"Hotel {hotel_id=} not found"}
+    return {"status": "NOT FOUND", "message": f"Hotel {hotel_id=} not found"}
 
 
 @router.delete("/{hotel_id}")
 async def delete_hotel(hotel_id: int) -> dict:
     """ Delete hotel by ID """
 
-    for hotel in hotels:
-        logger.info(hotel)
-        if hotel.id == hotel_id:
-            hotels.remove(hotel)
-            return {"status": 200, "message": f"Hotel {hotel_id=} deleted"}
-        else:
-            continue
-    return {"status": 404, "message": f"Hotel {hotel_id=} not found"}
-
+    async with async_session_maker() as session:
+        await HotelsRepository(session).delete(id=hotel_id)
+        await session.commit()
+    return {"status": "OK", "message": f"Hotel {hotel_id=} deleted"}

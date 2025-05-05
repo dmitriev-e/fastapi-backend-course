@@ -26,7 +26,7 @@ class BaseRepository:
         return result.scalars().one()
 
     # Template for editing record in database
-    async def edit(self, data: BaseModel, **filter_by) -> None:
+    async def edit(self, data: BaseModel, partial_update: bool = False, **filter_by) -> BaseModel:
         # If record exists, update it and the only one
         query = select(self.model).filter_by(**filter_by)
         result = await self.session.execute(query)
@@ -35,8 +35,9 @@ class BaseRepository:
             case 0:
                 raise HTTPException(status_code=404, detail="Record not found")
             case 1:
-                update_stmt = update(self.model).values(**data.model_dump()).filter_by(**filter_by)
-                await self.session.execute(update_stmt)
+                update_stmt = update(self.model).values(**data.model_dump(exclude_unset=partial_update)).filter_by(**filter_by).returning(self.model)
+                result = await self.session.execute(update_stmt)
+                return result.scalars().one()
             case _:
                 raise HTTPException(status_code=400, detail="Multiple records found")
 

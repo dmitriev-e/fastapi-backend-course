@@ -2,10 +2,9 @@ from fastapi import APIRouter, Query, Body
 import logging
 
 from fastapi.openapi.models import Example
-from sqlalchemy import insert, update, delete, select, or_
 
 from src.db import async_session_maker
-from src.schemas.hotels import Hotel, HotelPartialData, HotelCreateData
+from src.schemas.hotels import HotelPartialData, HotelCreateData
 from src.repositories.hotels import HotelsRepository
 
 logger = logging.getLogger("uvicorn")
@@ -41,13 +40,13 @@ async def create_hotel(hotel_data: HotelCreateData = Body(openapi_examples={
         summary = "The Westin",
         value = {"title": "The Westin", "stars": 4, "location": "San Francisco"}
     )
-}) ) -> dict:
+}) ):
     """ Create new hotel in Database"""
 
     async with async_session_maker() as session:
         hotel_added = await HotelsRepository(session).add(hotel_data)
         await session.commit()
-    return {"status": "OK", "message": f"Hotel created", "data": Hotel.model_validate(hotel_added)}
+    return {"status": "OK", "message": f"Hotel created", "data": hotel_added}
 
 
 @router.put("/{hotel_id}")
@@ -59,41 +58,38 @@ async def edit_hotel(
                 value = {"title": "The Grand Hotel", "stars": 5, "location": "Los Angeles"}
             ),
         })
-    ) -> dict:
+    ):
     """ Update hotel with full parameters list """
 
     async with async_session_maker() as session:
-        await HotelsRepository(session).edit(hotel_data, id=hotel_id)
+        hotel_edited = await HotelsRepository(session).edit(hotel_data, id=hotel_id)
         await session.commit()
-    return {"status": "OK", "message": f"Hotel {hotel_id=} updated", "data": hotel_data}
-
-
-@router.patch("/{hotel_id}")
-async def update_hotel(
-        hotel_id: int,
-        hotel_data: HotelPartialData
-) -> dict:
-    """ Partial Update hotel by ID and partial parameters list """
-
-    for hotel in hotels:
-        if hotel.id == hotel_id:
-            if hotel_data.name:
-                hotel.name = hotel_data.name
-            if hotel_data.stars:
-                hotel.stars = hotel_data.stars
-            if hotel_data.city:
-                hotel.city = hotel_data.city
-            return {"status": "OK", "message": f"Hotel {hotel_id=} updated", "data": hotel}
-        else:
-            continue
-    return {"status": "NOT FOUND", "message": f"Hotel {hotel_id=} not found"}
+    return {"status": "OK", "message": f"Hotel {hotel_id=} updated", "data": hotel_edited}
 
 
 @router.delete("/{hotel_id}")
-async def delete_hotel(hotel_id: int) -> dict:
+async def delete_hotel(hotel_id: int):
     """ Delete hotel by ID """
 
     async with async_session_maker() as session:
         await HotelsRepository(session).delete(id=hotel_id)
         await session.commit()
     return {"status": "OK", "message": f"Hotel {hotel_id=} deleted"}
+
+
+@router.patch("/{hotel_id}")
+async def update_hotel(
+        hotel_id: int,
+        hotel_data: HotelPartialData = Body(openapi_examples={
+            "Hotel 1": Example(
+                summary = "Update hotel with new title",
+                value = {"title": "The Grand Resort"}
+            ),
+        })
+    ):
+    """ Partial Update hotel by ID and partial parameters list """
+
+    async with async_session_maker() as session:
+        hotel_edited = await HotelsRepository(session).edit(hotel_data, id=hotel_id, partial_update=True)
+        await session.commit()
+    return {"status": "OK", "message": f"Hotel {hotel_id=} updated", "data": hotel_edited}

@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Path, Query, Body
 import logging
 
 from fastapi.openapi.models import Example
+from fastapi.responses import JSONResponse
 
 from src.db import async_session_maker
 from src.schemas.hotels import HotelPartialData, HotelCreateData
@@ -55,7 +56,7 @@ async def create_hotel(hotel_data: HotelCreateData = Body(openapi_examples={
     async with async_session_maker() as session:
         hotel_added = await HotelsRepository(session).add(hotel_data)
         await session.commit()
-    return {"status": "OK", "message": f"Hotel created", "data": hotel_added}
+    return JSONResponse(status_code=200, content={"detail": "Hotel created", "data": hotel_added.model_dump()})
 
 
 @router.put("/{hotel_id}")
@@ -73,7 +74,7 @@ async def edit_hotel(
     async with async_session_maker() as session:
         hotel_edited = await HotelsRepository(session).edit(hotel_data, id=hotel_id)
         await session.commit()
-    return {"status": "OK", "message": f"Hotel {hotel_id=} updated", "data": hotel_edited}
+    return JSONResponse(status_code=200, content={"detail": "Hotel updated", "data": hotel_edited.model_dump()})
 
 
 @router.delete("/{hotel_id}")
@@ -83,7 +84,7 @@ async def delete_hotel(hotel_id: int):
     async with async_session_maker() as session:
         await HotelsRepository(session).delete(id=hotel_id)
         await session.commit()
-    return {"status": "OK", "message": f"Hotel {hotel_id=} deleted"}
+    return JSONResponse(status_code=200, content={"detail": "Hotel deleted"})
 
 
 @router.patch("/{hotel_id}")
@@ -101,4 +102,4 @@ async def update_hotel(
     async with async_session_maker() as session:
         hotel_edited = await HotelsRepository(session).edit(hotel_data, id=hotel_id, partial_update=True)
         await session.commit()
-    return {"status": "OK", "message": f"Hotel {hotel_id=} updated", "data": hotel_edited}
+    return JSONResponse(status_code=200, content={"detail": "Hotel updated", "data": hotel_edited.model_dump()})

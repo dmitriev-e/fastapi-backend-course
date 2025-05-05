@@ -10,11 +10,13 @@ class BaseRepository:
     def __init__(self, session):
         self.session = session
     
+    # Repository Template for getting all records from database
     async def get_all(self, *args, **kwargs):
         query = select(self.model)
         result = await self.session.execute(query)
         return [self.schema.model_validate(res, from_attributes=True) for res in result.scalars().all()]
  
+    # Repository Template for getting one record from database
     async def get_one_or_none(self, **filter_by):
         query = select(self.model).filter_by(**filter_by)
         result = await self.session.execute(query)
@@ -23,15 +25,15 @@ class BaseRepository:
             return None
         return self.schema.model_validate(res, from_attributes=True)
     
-    # Template for adding new record to database
+    # Repository Template for adding new record to database
     async def add(self, data: BaseModel):
         add_stmt = insert(self.model).values(**data.model_dump()).returning(self.model)
         result = await self.session.execute(add_stmt)
         res = result.scalars().one()
         return self.schema.model_validate(res, from_attributes=True)
 
-    # Template for editing record in database
-    async def edit(self, data: BaseModel, partial_update: bool = False, **filter_by) -> BaseModel:
+    # Repository Template for editing record in database
+    async def edit(self, data: BaseModel, partial_update: bool = False, **filter_by):
         # If record exists, update it and the only one
         query = select(self.model).filter_by(**filter_by)
         result = await self.session.execute(query)
@@ -48,7 +50,7 @@ class BaseRepository:
                 raise HTTPException(status_code=400, detail="Multiple records found")
 
 
-    # Template for deleting record from database
+    # Repository Template for deleting record from database
     async def delete(self, **filter_by) -> None:
         query = select(self.model).filter_by(**filter_by)
         result = await self.session.execute(query)

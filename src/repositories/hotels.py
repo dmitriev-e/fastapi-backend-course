@@ -6,6 +6,7 @@ from src.models.hotels import HotelsORM
 
 class HotelsRepository(BaseRepository):
     model = HotelsORM
+    schema = Hotel
     
     async def get_all(
             self, 
@@ -21,5 +22,5 @@ class HotelsRepository(BaseRepository):
         # LIMIT and OFFSET
         query = query.offset(offset).limit(limit)
         query_result = await self.session.execute(query)
-        return query_result.scalars().all()
+        return [self.schema.model_validate(res, from_attributes=True) for res in query_result.scalars().all()]
 

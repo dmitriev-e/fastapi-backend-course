@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query, Body
+from fastapi import APIRouter, HTTPException, Path, Query, Body
 import logging
 
 from fastapi.openapi.models import Example
@@ -13,7 +13,6 @@ router = APIRouter(prefix="/hotels", tags=["Hotels"])
 
 @router.get("/")
 async def get_hotels(
-        hotel_id: int | None = Query(default=None, description="ID of the hotel"),
         title: str | None = Query(default=None, description="Title of the hotel", min_length=2),
         location: str | None = Query(default=None, description="Location of the hotel", min_length=2),
         page: int | None = Query(default=1, description="Page number", ge=1),
@@ -21,13 +20,22 @@ async def get_hotels(
 ):
     """ Get list of hotels """
     async with async_session_maker() as session:
-        return await HotelsRepository(session).get_all(
-            hotel_id=hotel_id, 
+        return await HotelsRepository(session).get_all( 
             title=title, 
             location=location,
             limit=per_page,
             offset=(page - 1) * per_page
         )
+
+
+@router.get("/{hotel_id}")
+async def get_hotel(hotel_id: int = Path(description="ID of the hotel", gt=0)):
+    """ Get hotel by ID """
+    async with async_session_maker() as session:
+        hotel = await HotelsRepository(session).get_one_or_none(id=hotel_id)
+        if hotel is None:
+            raise HTTPException(status_code=404, detail="Hotel not found")
+        return hotel
 
 
 @router.post("/")

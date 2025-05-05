@@ -11,6 +11,7 @@ logger = logging.getLogger("uvicorn")
 
 router = APIRouter(prefix="/hotels", tags=["Hotels"])
 
+
 @router.get("/")
 async def get_hotels(
         title: str | None = Query(default=None, description="Title of the hotel", min_length=2),

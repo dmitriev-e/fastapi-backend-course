@@ -1,21 +1,25 @@
-import hashlib
 from fastapi.openapi.models import Example
 from fastapi import APIRouter, Body
 from fastapi.responses import JSONResponse
 
+from passlib.context import CryptContext
+
 from src.repositories.users import UsersRepository
 from src.db import async_session_maker
-from src.schemas.users import UserAddToDB, UserRequestCreate
+from src.schemas.users import UserAddToDB, UserRequestCreate, UserResponse
 
 router = APIRouter(
     prefix="/auth",
     tags=["Auth"]
 )
 
+#   Password hashing context
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 #   Helper function to hash password
 def hash_password(password: str) -> str:
     """Hash a password"""
-    return hashlib.sha256(password.encode()).hexdigest()
+    return pwd_context.hash(password)
 
 
 @router.post("/register")
@@ -43,5 +47,10 @@ async def register_user(
         user_added = await UsersRepository(session).add(add_data)
         await session.commit()
 
-    #   Return response with added user data
-    return JSONResponse(status_code=200, content={"detail": "User created", "data": user_added.model_dump()})
+    #   Check if user was added
+    if user_added:
+        #   Return response with added user data
+        return JSONResponse(status_code=200, content={"detail": "User created", "data": user_added.model_dump()})
+    else:
+        #   Return response with error message
+        return JSONResponse(status_code=400, content={"detail": "User not created", "data": None})

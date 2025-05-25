@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 from sqlalchemy import delete, select, insert, update
+from sqlalchemy.exc import IntegrityError
 from pydantic import BaseModel
 
 
@@ -27,10 +28,13 @@ class BaseRepository:
     
     # Repository Template for adding new record to database
     async def add(self, data: BaseModel):
-        add_stmt = insert(self.model).values(**data.model_dump()).returning(self.model)
-        result = await self.session.execute(add_stmt)
-        res = result.scalars().one()
-        return self.schema.model_validate(res, from_attributes=True)
+        try:
+            add_stmt = insert(self.model).values(**data.model_dump()).returning(self.model)
+            result = await self.session.execute(add_stmt)
+            res = result.scalars().one()
+            return self.schema.model_validate(res, from_attributes=True)
+        except IntegrityError as e:
+            raise e
 
     # Repository Template for editing record in database
     async def edit(self, data: BaseModel, partial_update: bool = False, **filter_by):

@@ -6,7 +6,7 @@ from passlib.context import CryptContext
 
 from src.repositories.users import UsersRepository
 from src.db import async_session_maker
-from src.schemas.users import UserAddToDB, UserRequestCreate, UserResponse
+from src.schemas.users import UserAddToDB, UserRequestCreate
 
 router = APIRouter(
     prefix="/auth",
@@ -42,10 +42,13 @@ async def register_user(
     #   Hash password and remove raw_password from data
     add_data = UserAddToDB(email=data.email, password=hash_password(data.raw_password))
 
+    try:
     #   Add user to database
-    async with async_session_maker() as session:
-        user_added = await UsersRepository(session).add(add_data)
-        await session.commit()
+        async with async_session_maker() as session:
+                user_added = await UsersRepository(session).add(add_data)
+                await session.commit()
+    except Exception as e:
+        return JSONResponse(status_code=400, content={"detail": "User not created", "data": str(e.orig).split('\nDETAIL:')[1]})
 
     #   Check if user was added
     if user_added:

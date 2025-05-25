@@ -1,6 +1,4 @@
-from typing import Optional, Boolean
-
-from sqlalchemy import String, ForeignKey
+from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.db import Base
@@ -10,5 +8,3 @@ class UsersORM(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(100))
     password: Mapped[str] = mapped_column(String(100))
-    
-    

@@ -1,14 +1,11 @@
-import jwt
-from datetime import datetime, timedelta, timezone
 from fastapi.openapi.models import Example
-from fastapi import APIRouter, Body
+from fastapi import APIRouter, Body, Request
 from fastapi.responses import JSONResponse
-from passlib.context import CryptContext
 
 from src.services.auth import AuthService
 from src.repositories.users import UsersRepository, UsersRepositoryLogin
 from src.db import async_session_maker
-from src.schemas.users import UserAddToDB, UserRequestCreate, UserRequestLogin
+from src.schemas.users import UserAddToDB, UserRequestCreate, UserRequestLogin, UserResponse
 
 router = APIRouter(
     prefix="/auth",
@@ -76,3 +73,18 @@ async def login_user(
     response = JSONResponse(status_code=200, content={"detail": "Login successful", "data": {"access_token": access_token}})
     response.set_cookie(key="access_token", value=access_token, secure=True, samesite="Strict")
     return response
+
+
+@router.get("/is_auth")
+async def is_auth(request: Request):
+    """Check if user is authenticated"""
+    if request.cookies.get("access_token"):
+        user_id = AuthService().get_user_id_from_token(request.cookies.get("access_token"))
+        async with async_session_maker() as session:
+            user = await UsersRepository(session).get_one_or_none(id=user_id)
+            if user:
+                return JSONResponse(status_code=200, content={"detail": "User is authenticated", "data": user.model_dump()})
+            else:
+                return JSONResponse(status_code=404, content={"detail": "User not found", "data": None})
+    else:
+        return JSONResponse(status_code=401, content={"detail": "User is not authenticated", "data": None})

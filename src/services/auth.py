@@ -27,3 +27,6 @@ class AuthService:
         """Verify a password"""
         return self.pwd_context.verify(password, hashed_password)
 
+    def get_user_id_from_token(self, token: str) -> int:
+        """Get a user from a token"""
+        return jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])["id"]

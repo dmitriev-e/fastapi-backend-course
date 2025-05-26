@@ -15,7 +15,5 @@ class UserAddToDB(BaseModel):
     email: EmailStr
     password: str
 
-class UserResponseLogin(BaseModel):
-    access_token: str
-    refresh_token: str
-    user: UserResponse
+class UserResponseLogin(UserResponse):
+    password: str

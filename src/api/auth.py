@@ -76,6 +76,14 @@ async def login_user(
     return response
 
 
+@router.post("/logout")
+async def logout_user(response: Response):
+    """Logout a user"""
+    response = JSONResponse(status_code=200, content={"detail": "Logout successful", "data": None})
+    response.delete_cookie(key="access_token", secure=True, samesite="Strict")
+    return response
+
+
 @router.get("/is_auth")
 async def is_auth(user_id: UserIdDep):
     """Check if user is authenticated"""

@@ -1,7 +1,8 @@
 from fastapi.openapi.models import Example
-from fastapi import APIRouter, Body, Request
+from fastapi import APIRouter, Body, Request, Response
 from fastapi.responses import JSONResponse
 
+from src.api.dependencies import UserIdDep
 from src.services.auth import AuthService
 from src.repositories.users import UsersRepository, UsersRepositoryLogin
 from src.db import async_session_maker
@@ -76,10 +77,9 @@ async def login_user(
 
 
 @router.get("/is_auth")
-async def is_auth(request: Request):
+async def is_auth(user_id: UserIdDep):
     """Check if user is authenticated"""
-    if request.cookies.get("access_token"):
-        user_id = AuthService().get_user_id_from_token(request.cookies.get("access_token"))
+    if user_id:
         async with async_session_maker() as session:
             user = await UsersRepository(session).get_one_or_none(id=user_id)
             if user:

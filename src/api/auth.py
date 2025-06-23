@@ -1,6 +1,6 @@
 from fastapi.openapi.models import Example
-from fastapi import APIRouter, Body, Request, Response
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Body
+from fastapi.responses import Response
 
 from src.api.dependencies import UserIdDep
 from src.services.auth import AuthService
@@ -39,15 +39,15 @@ async def register_user(
                 user_added = await UsersRepository(session).add(add_data)
                 await session.commit()
     except Exception as e:
-        return JSONResponse(status_code=400, content={"detail": "User not created", "data": str(e.orig).split('\nDETAIL:')[1]})
+        return Response(status_code=400, content={"detail": "User not created", "data": str(e.orig).split('\nDETAIL:')[1]})
 
     #   Check if user was added
     if user_added:
         #   Return response with added user data
-        return JSONResponse(status_code=200, content={"detail": "User created", "data": user_added.model_dump()})
+        return Response(status_code=200, content={"detail": "User created", "data": user_added.model_dump()})
     else:
         #   Return response with error message
-        return JSONResponse(status_code=400, content={"detail": "User not created", "data": None})
+        return Response(status_code=400, content={"detail": "User not created", "data": None})
 
 
 @router.post("/login")
@@ -67,11 +67,11 @@ async def login_user(
         user = await UsersRepositoryLogin(session).get_one_or_none(email=data.email)
 
     if not user or not AuthService().verify_password(data.raw_password, user.password):
-        return JSONResponse(status_code=401, content={"detail": "Invalid credentials", "data": None})
+        return Response(status_code=401, content={"detail": "Invalid credentials", "data": None})
     access_token = AuthService().create_access_token({"id": user.id})
 
     # Insert access token to cookies
-    response = JSONResponse(status_code=200, content={"detail": "Login successful", "data": {"access_token": access_token}})
+    response = Response(status_code=200, content={"detail": "Login successful", "data": {"access_token": access_token}})
     response.set_cookie(key="access_token", value=access_token, secure=True, samesite="Strict")
     return response
 
@@ -79,7 +79,7 @@ async def login_user(
 @router.post("/logout")
 async def logout_user(response: Response):
     """Logout a user"""
-    response = JSONResponse(status_code=200, content={"detail": "Logout successful", "data": None})
+    response = Response(status_code=200, content={"detail": "Logout successful", "data": None})
     response.delete_cookie(key="access_token", secure=True, samesite="Strict")
     return response
 
@@ -91,8 +91,8 @@ async def is_auth(user_id: UserIdDep):
         async with async_session_maker() as session:
             user = await UsersRepository(session).get_one_or_none(id=user_id)
             if user:
-                return JSONResponse(status_code=200, content={"detail": "User is authenticated", "data": user.model_dump()})
+                return Response(status_code=200, content={"detail": "User is authenticated", "data": user.model_dump()})
             else:
-                return JSONResponse(status_code=404, content={"detail": "User not found", "data": None})
+                return Response(status_code=404, content={"detail": "User not found", "data": None})
     else:
-        return JSONResponse(status_code=401, content={"detail": "User is not authenticated", "data": None})
+        return Response(status_code=401, content={"detail": "User is not authenticated", "data": None})

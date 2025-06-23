@@ -1,5 +1,5 @@
 from sqlalchemy import String, Integer
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.db import Base
 
@@ -9,3 +9,5 @@ class HotelsORM(Base):
     title: Mapped[str] = mapped_column(String(100))
     stars: Mapped[int]
     location: Mapped[str] = mapped_column(String(200))
+
+    rooms_rs = relationship("RoomsORM", back_populates="hotel_rs")

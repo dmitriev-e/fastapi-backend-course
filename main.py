@@ -3,6 +3,7 @@ import logging
 from fastapi import FastAPI
 from src.api.hotels import router as router_hotels
 from src.api.auth import router as router_auth
+from src.api.rooms import router as router_rooms
 
 logger = logging.getLogger("uvicorn")
 
@@ -10,6 +11,7 @@ app = FastAPI()
 
 app.include_router(router_auth)
 app.include_router(router_hotels)
+app.include_router(router_rooms)
 
 
 

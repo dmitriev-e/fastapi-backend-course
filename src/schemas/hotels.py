@@ -1,3 +1,7 @@
+"""
+Pydantic schemas for Hotels
+"""
+
 from typing import Optional, get_type_hints
 from pydantic import BaseModel, Field
 

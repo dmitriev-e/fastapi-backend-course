@@ -1,3 +1,6 @@
+"""
+SQLAlchemy models for Rooms and Room Types
+"""
 from typing import Optional
 
 from sqlalchemy import String, ForeignKey

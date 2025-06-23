@@ -53,7 +53,6 @@ class BaseRepository:
             case _:
                 raise HTTPException(status_code=400, detail="Multiple records found")
 
-
     # Repository Template for deleting record from database
     async def delete(self, **filter_by) -> None:
         query = select(self.model).filter_by(**filter_by)

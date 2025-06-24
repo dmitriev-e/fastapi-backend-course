@@ -9,6 +9,7 @@ from src.db import async_session_maker
 from src.repositories.hotels import HotelsRepository
 from src.repositories.rooms import RoomsRepository
 from src.repositories.users import UsersRepository
+from src.repositories.bookings import BookingsRepository
 
 def get_token(request: Request):
     """Get the token from the request"""
@@ -42,6 +43,7 @@ class DBManager:
         self.rooms = RoomsRepository(self.session)
         self.hotels = HotelsRepository(self.session)
         self.users = UsersRepository(self.session)
+        self.bookings = BookingsRepository(self.session)
         
         return self
 

@@ -18,13 +18,14 @@ class RoomsORM(Base):
     description: Mapped[Optional[str | None]]
     price: Mapped[int]
     
-    hotel_rs = relationship("HotelsORM", back_populates="rooms_rs")
-    room_type_rs = relationship("RoomTypesORM", back_populates="rooms_rs")
-
+    hotel = relationship("HotelsORM", back_populates="rooms")
+    room_type = relationship("RoomTypesORM", back_populates="rooms")
+    bookings = relationship("BookingsORM", back_populates="room")
+    
 class RoomTypesORM(Base):
     __tablename__ = "room_types"
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(100))
     description: Mapped[Optional[str | None]]
 
-    rooms_rs = relationship("RoomsORM", back_populates="room_type_rs")
+    rooms = relationship("RoomsORM", back_populates="room_type")

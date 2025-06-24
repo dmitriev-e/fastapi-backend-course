@@ -1,8 +1,12 @@
 import asyncio
+from datetime import time
 from sqlalchemy import delete
 
 from src.models.hotels import HotelsORM
 from src.models.rooms import RoomsORM, RoomTypesORM
+from src.models.bookings import BookingsORM
+from src.models.users import UsersORM
+
 from src.db import Base, async_session_maker
 
 
@@ -13,18 +17,20 @@ from src.db import Base, async_session_maker
     title: Mapped[str] = mapped_column(String(100))
     stars: Mapped[int]
     location: Mapped[str] = mapped_column(String(200))
+    check_in: Mapped[str] = mapped_column(String(10))
+    check_out: Mapped[str] = mapped_column(String(10))
 """
 hotels = [
-    HotelsORM(id=1, title='Ocean View Hotel', stars=5, location='Miami Beach'),
-    HotelsORM(id=2, title='Mountain Retreat', stars=4, location='Aspen'),
-    HotelsORM(id=3, title='City Center Inn', stars=3, location='New York'),
-    HotelsORM(id=4, title='Desert Oasis', stars=4, location='Palm Springs'),
-    HotelsORM(id=5, title='Lakeside Lodge', stars=3, location='Lake Tahoe'),
-    HotelsORM(id=6, title='Historic Castle', stars=5, location='Scotland'),
-    HotelsORM(id=7, title='Tropical Paradise', stars=4, location='Hawaii'),
-    HotelsORM(id=8, title='Business Hub Hotel', stars=3, location='San Francisco'),
-    HotelsORM(id=9, title='Countryside Escape', stars=4, location='Napa Valley'),
-    HotelsORM(id=10, title='Luxury Spa Resort', stars=5, location='Bali')
+    HotelsORM(id=1, title='Ocean View Hotel', stars=5, location='Miami Beach', check_in=time(14, 0), check_out=time(12, 0)),
+    HotelsORM(id=2, title='Mountain Retreat', stars=4, location='Aspen', check_in=time(14, 0), check_out=time(12, 0)),
+    HotelsORM(id=3, title='City Center Inn', stars=3, location='New York', check_in=time(14, 0), check_out=time(12, 0)),
+    HotelsORM(id=4, title='Desert Oasis', stars=4, location='Palm Springs', check_in=time(14, 0), check_out=time(11, 0)),
+    HotelsORM(id=5, title='Lakeside Lodge', stars=3, location='Lake Tahoe', check_in=time(14, 0), check_out=time(11, 0)),
+    HotelsORM(id=6, title='Historic Castle', stars=5, location='Scotland', check_in=time(15, 0), check_out=time(12, 0)),
+    HotelsORM(id=7, title='Tropical Paradise', stars=4, location='Hawaii', check_in=time(15, 0), check_out=time(12, 0)),
+    HotelsORM(id=8, title='Business Hub Hotel', stars=3, location='San Francisco', check_in=time(15, 0), check_out=time(11, 0)),
+    HotelsORM(id=9, title='Countryside Escape', stars=4, location='Napa Valley', check_in=time(15, 0), check_out=time(11, 0)),
+    HotelsORM(id=10, title='Luxury Spa Resort', stars=5, location='Bali', check_in=time(15, 0), check_out=time(11, 0))
 ]
 
 # Room types
@@ -120,17 +126,17 @@ rooms = [
 
 async def add_data_to_db(data: list, model: Base):
     async with async_session_maker() as session:
+        print(f"Adding {model.__tablename__}...")
         for item in data:
             session.add(item)
         await session.commit()
 
-async def replace_data(data: list, model: Base):
-    print(f"Replacing {model.__tablename__}...")
+async def delete_db_data(model: Base):
     # Delete all items
     async with async_session_maker() as session:
+        print(f"Deleting {model.__tablename__}...")
         await session.execute(delete(model))
         await session.commit()
-    await add_data_to_db(data, model)
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
@@ -143,15 +149,26 @@ if __name__ == "__main__":
     choice = input("Enter the number of the option: ")
     if choice == "1":
         print("Replacing room types...")
-        loop.run_until_complete(replace_data(room_types, RoomTypesORM))
+        loop.run_until_complete(delete_db_data(RoomsORM))
+        loop.run_until_complete(delete_db_data(RoomTypesORM))
+        loop.run_until_complete(add_data_to_db(room_types, RoomTypesORM))
+        loop.run_until_complete(add_data_to_db(rooms, RoomsORM))
     elif choice == "2":
         print("Replacing rooms...")
-        loop.run_until_complete(replace_data(rooms, RoomsORM))
+        loop.run_until_complete(delete_db_data(RoomsORM))
+        loop.run_until_complete(add_data_to_db(rooms, RoomsORM))
     elif choice == "3":
         print("Replacing hotels...")
-        loop.run_until_complete(replace_data(hotels, HotelsORM))
+        loop.run_until_complete(delete_db_data(RoomsORM))
+        loop.run_until_complete(delete_db_data(HotelsORM))
+        loop.run_until_complete(add_data_to_db(hotels, HotelsORM))
+        loop.run_until_complete(add_data_to_db(rooms, RoomsORM))
     elif choice == "4":
         print("Replacing all...")
-        loop.run_until_complete(replace_data(room_types, RoomTypesORM))
-        loop.run_until_complete(replace_data(hotels, HotelsORM))
-        loop.run_until_complete(replace_data(rooms, RoomsORM))
+        loop.run_until_complete(delete_db_data(RoomsORM))
+        loop.run_until_complete(delete_db_data(RoomTypesORM))
+        loop.run_until_complete(delete_db_data(HotelsORM))
+        loop.run_until_complete(add_data_to_db(hotels, HotelsORM))
+        loop.run_until_complete(add_data_to_db(room_types, RoomTypesORM))
+        loop.run_until_complete(add_data_to_db(rooms, RoomsORM))
+        

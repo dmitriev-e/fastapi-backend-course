@@ -1,47 +1,52 @@
-from fastapi import APIRouter, HTTPException, Path, Query, Body
+from fastapi import APIRouter, HTTPException, Path, Query, Body, status
 import logging
+from typing import List
 
 from fastapi.openapi.models import Example
 from fastapi.responses import JSONResponse
 
 from src.api.dependencies import DBDep
-from src.schemas.hotels import HotelPartialData, HotelCreateData
+from src.schemas.hotels import HotelPartialData, HotelCreateData, Hotel
 
 logger = logging.getLogger("uvicorn")
 
 router = APIRouter(prefix="/hotels", tags=["Hotels"])
 
 
-@router.get("/")
+@router.get("/", response_model=List[Hotel])
 async def get_hotels(
     db: DBDep,
     title: str | None = Query(default=None, description="Title of the hotel", min_length=2),
     location: str | None = Query(default=None, description="Location of the hotel", min_length=2),
-    page: int | None = Query(default=1, description="Page number", ge=1),
-    per_page: int | None = Query(default=3, description="Number of items per page", ge=1, le=100),    
+    page: int = Query(default=1, description="Page number", ge=1),
+    per_page: int = Query(default=3, description="Number of items per page", ge=1, le=100),    
 ):
     """ Get list of hotels """
-    return await db.hotels.get_all( 
+    hotels = await db.hotels.get_all( 
             title=title, 
             location=location,
             limit=per_page,
             offset=(page - 1) * per_page
         )
+    return hotels
 
 
-@router.get("/{hotel_id}")
+@router.get("/{hotel_id}", response_model=Hotel)
 async def get_hotel(
     db: DBDep,
     hotel_id: int = Path(description="ID of the hotel", gt=0),
 ):
     """ Get hotel by ID """
     hotel = await db.hotels.get_one_or_none(id=hotel_id)
-    if hotel is None:
-        raise HTTPException(status_code=404, detail="Hotel not found")
+    if not hotel:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Hotel with ID {hotel_id} not found"
+        )
     return hotel
 
 
-@router.post("/")
+@router.post("/", response_model=Hotel, status_code=status.HTTP_201_CREATED)
 async def create_hotel(
     db: DBDep,
     hotel_data: HotelCreateData = Body(openapi_examples={
@@ -55,16 +60,15 @@ async def create_hotel(
     )
 }) ):
     """ Create new hotel in Database"""
-
     hotel_added = await db.hotels.add(hotel_data)
     await db.commit()
-    return JSONResponse(status_code=200, content={"detail": "Hotel created", "data": hotel_added.model_dump()})
+    return hotel_added
 
 
-@router.put("/{hotel_id}")
+@router.put("/{hotel_id}", response_model=Hotel)
 async def edit_hotel(
     db: DBDep,
-    hotel_id: int,
+    hotel_id: int = Path(description="ID of the hotel", gt=0),
     hotel_data: HotelCreateData = Body(openapi_examples={
         "Hotel 1": Example(
             summary = "Update hotel with new title",
@@ -73,28 +77,41 @@ async def edit_hotel(
     })
 ):
     """ Update hotel with full parameters list """
-
+    # Check if hotel exists
+    existing_hotel = await db.hotels.get_one_or_none(id=hotel_id)
+    if not existing_hotel:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Hotel with ID {hotel_id} not found"
+        )
+    
     hotel_edited = await db.hotels.edit(hotel_data, id=hotel_id)
     await db.commit()
-    return JSONResponse(status_code=200, content={"detail": "Hotel updated", "data": hotel_edited.model_dump()})
+    return hotel_edited
 
 
-@router.delete("/{hotel_id}")
+@router.delete("/{hotel_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_hotel(
     db: DBDep,
-    hotel_id: int,
+    hotel_id: int = Path(description="ID of the hotel", gt=0),
 ):
     """ Delete hotel by ID """
-
+    # Check if hotel exists
+    existing_hotel = await db.hotels.get_one_or_none(id=hotel_id)
+    if not existing_hotel:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Hotel with ID {hotel_id} not found"
+        )
+    
     await db.hotels.delete(id=hotel_id)
     await db.commit()
-    return JSONResponse(status_code=200, content={"detail": "Hotel deleted"})
 
 
-@router.patch("/{hotel_id}")
+@router.patch("/{hotel_id}", response_model=Hotel)
 async def update_hotel(
     db: DBDep,
-    hotel_id: int,
+    hotel_id: int = Path(description="ID of the hotel", gt=0),
     hotel_data: HotelPartialData = Body(openapi_examples={
             "Hotel 1": Example(
                 summary = "Update hotel with new title",
@@ -103,7 +120,14 @@ async def update_hotel(
         })
     ):
     """ Partial Update hotel by ID and partial parameters list """
-
+    # Check if hotel exists
+    existing_hotel = await db.hotels.get_one_or_none(id=hotel_id)
+    if not existing_hotel:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Hotel with ID {hotel_id} not found"
+        )
+    
     hotel_edited = await db.hotels.edit(hotel_data, id=hotel_id, partial_update=True)
     await db.commit()
-    return JSONResponse(status_code=200, content={"detail": "Hotel updated", "data": hotel_edited.model_dump()})
+    return hotel_edited

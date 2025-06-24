@@ -1,6 +1,6 @@
 from fastapi.openapi.models import Example
 from fastapi import APIRouter, Body
-from fastapi.responses import Response
+from fastapi.responses import Response, JSONResponse
 
 from src.api.dependencies import UserIdDep
 from src.services.auth import AuthService
@@ -71,7 +71,7 @@ async def login_user(
     access_token = AuthService().create_access_token({"id": user.id})
 
     # Insert access token to cookies
-    response = Response(status_code=200, content={"detail": "Login successful", "data": {"access_token": access_token}})
+    response = JSONResponse(status_code=200, content={"detail": "Login successful", "data": {"access_token": access_token}})
     response.set_cookie(key="access_token", value=access_token, secure=True, samesite="Strict")
     return response
 
@@ -79,7 +79,7 @@ async def login_user(
 @router.post("/logout")
 async def logout_user(response: Response):
     """Logout a user"""
-    response = Response(status_code=200, content={"detail": "Logout successful", "data": None})
+    response = JSONResponse(status_code=200, content={"detail": "Logout successful", "data": None})
     response.delete_cookie(key="access_token", secure=True, samesite="Strict")
     return response
 
@@ -91,8 +91,8 @@ async def is_auth(user_id: UserIdDep):
         async with async_session_maker() as session:
             user = await UsersRepository(session).get_one_or_none(id=user_id)
             if user:
-                return Response(status_code=200, content={"detail": "User is authenticated", "data": user.model_dump()})
+                return JSONResponse(status_code=200, content={"detail": "User is authenticated", "data": user.model_dump()})
             else:
-                return Response(status_code=404, content={"detail": "User not found", "data": None})
+                return JSONResponse(status_code=404, content={"detail": "User not found", "data": None})
     else:
-        return Response(status_code=401, content={"detail": "User is not authenticated", "data": None})
+        return JSONResponse(status_code=401, content={"detail": "User is not authenticated", "data": None})

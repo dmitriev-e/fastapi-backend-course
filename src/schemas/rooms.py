@@ -21,7 +21,8 @@ class RoomCreateModel(RoomBaseModel):
     hotel_id: int = Field(description="ID of the hotel", gt=0)
 
 class RoomCreateRequest(RoomBaseModel):
-    pass
+    """Room creation Model request for HTTP Request"""
+    hotel_id: int = Field(description="ID of the hotel", gt=0)
 
 class RoomPartialData(RoomCreateModel):
     number: Optional[get_type_hints(RoomCreateModel)["number"]] = None

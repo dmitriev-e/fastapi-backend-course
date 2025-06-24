@@ -13,13 +13,19 @@ logger = logging.getLogger("uvicorn")
 router = APIRouter(prefix="/bookings", tags=["Bookings"])
 
 
-@router.get("/", response_model=List[Booking])
-async def get_bookings(
+@router.get("/me", response_model=List[Booking])
+async def get_user_bookings(
     db: DBDep,
     user_id: UserIdDep,
 ):
     """Get all bookings for a user"""
     bookings = await db.bookings.get_all(user_id=user_id)
+    return bookings
+
+@router.get("/", response_model=List[Booking])
+async def get_all_bookings(db: DBDep):
+    """Get all bookings for all users"""
+    bookings = await db.bookings.get_all()
     return bookings
 
 

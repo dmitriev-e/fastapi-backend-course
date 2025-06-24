@@ -23,12 +23,6 @@ class BookingCreateRequest(BaseModel):
 
 class BookingAdd(BookingCreateRequest):
     """
-    Booking creation Model for Repository
-    """
-    user_id: int = Field(description="User ID")
-
-class BookingCreateORM(BookingCreateRequest):
-    """
     Booking creation Model for ORM model
     """
     user_id: int = Field(description="User ID")

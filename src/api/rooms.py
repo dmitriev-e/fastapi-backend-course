@@ -4,7 +4,7 @@ import logging
 from fastapi.openapi.models import Example
 from fastapi.responses import JSONResponse
 
-from src.db import async_session_maker
+from src.api.dependencies import DBDep
 from src.schemas.rooms import RoomCreateModel, RoomCreateRequest, RoomPartialData
 from src.repositories.rooms import RoomsRepository
 
@@ -15,6 +15,7 @@ router = APIRouter(prefix="/hotels/{hotel_id}/rooms", tags=["Rooms"])
 
 @router.get("/", summary="Get all rooms in the hotel_id")
 async def get_rooms_by_hotel_id(
+    db: DBDep,
     hotel_id: int = Path(description="ID of the hotel", 
                             gt=0, 
                             openapi_examples={
@@ -25,15 +26,15 @@ async def get_rooms_by_hotel_id(
                             })
 ):
     """ Get all rooms by hotel ID """
-    async with async_session_maker() as session:
-        rooms = await RoomsRepository(session).get_all(hotel_id=hotel_id)
-        if not rooms:
-            raise HTTPException(status_code=404, detail=f"Rooms not found for hotel_id: {hotel_id}")
-        return rooms
+    rooms = await db.rooms.get_all(hotel_id=hotel_id)
+    if not rooms:
+        raise HTTPException(status_code=404, detail=f"Rooms not found for hotel_id: {hotel_id}")
+    return rooms
 
 
 @router.get("/{room_id}", summary="Get room by ID")
 async def get_room_by_id(
+    db: DBDep,
     hotel_id: int = Path(description="ID of the hotel", gt=0, openapi_examples={
         "Hotel ID=1": Example(
             summary = "Hotel ID=1",
@@ -49,15 +50,15 @@ async def get_room_by_id(
     ):
     """ Get room by ID """
     logger.info(f"Getting room by ID: {room_id}")
-    async with async_session_maker() as session:
-        room = await RoomsRepository(session).get_one_or_none(id=room_id, hotel_id=hotel_id)
-        if room is None:
-            raise HTTPException(status_code=404, detail="Room not found")
-        return room
+    room = await db.rooms.get_one_or_none(id=room_id, hotel_id=hotel_id)
+    if room is None:
+        raise HTTPException(status_code=404, detail="Room not found")
+    return room
 
 
 @router.post("/", summary="Create new room in the hotel")
 async def create_room(
+    db: DBDep,
     hotel_id: int = Path(description="ID of the hotel", gt=0, openapi_examples={
         "Hotel ID=1": Example(
             summary = "Hotel ID=1",
@@ -86,73 +87,72 @@ async def create_room(
 }) ):
     """ Create new room in Database"""
     _room_data = RoomCreateModel(**room_data.model_dump(), hotel_id=hotel_id)
-    async with async_session_maker() as session:
-        room_added = await RoomsRepository(session).add(_room_data)
-        await session.commit()
+    room_added = await db.rooms.add(_room_data)
+    await db.commit()
     return JSONResponse(status_code=200, content={"detail": "Room created", "data": room_added.model_dump()})
 
 
 @router.put("/{room_id}", summary="Update room with full parameters list")
 async def edit_room_full_data(
-        hotel_id: int = Path(description="ID of the hotel", gt=0),
-        room_id: int = Path(description="ID of the room", gt=0, openapi_examples={
-            "Room ID=1": Example(
-                summary = "Room ID=1",
-                value = 1
-            ),
-        }),
-        room_data: RoomCreateRequest = Body(openapi_examples={
-            "Room 1": Example(
-                summary = "Update room with new title",
-                value = {
-                    "room_type_id": 1,
-                    "number": "301",
-                    "title": "The Grand Room",
-                    "description": "A grand room with a view of the ocean.",
-                    "price": 100
-                    }
-            ),
-        })
+    db: DBDep,
+    hotel_id: int = Path(description="ID of the hotel", gt=0),
+    room_id: int = Path(description="ID of the room", gt=0, openapi_examples={
+        "Room ID=1": Example(
+            summary = "Room ID=1",
+            value = 1
+        ),
+    }),
+    room_data: RoomCreateRequest = Body(openapi_examples={
+        "Room 1": Example(
+            summary = "Update room with new title",
+            value = {
+                "room_type_id": 1,
+                "number": "301",
+                "title": "The Grand Room",
+                "description": "A grand room with a view of the ocean.",
+                "price": 100
+                }
+        ),
+    })
     ):
     """ Update room with full parameters list """
     _room_data = RoomCreateModel(**room_data.model_dump(), hotel_id=hotel_id)
-    async with async_session_maker() as session:
-        room_edited = await RoomsRepository(session).edit(_room_data, id=room_id)
-        await session.commit()
+    room_edited = await db.rooms.edit(_room_data, id=room_id)
+    await db.commit()
     return JSONResponse(status_code=200, content={"detail": "Room updated", "data": room_edited.model_dump()})
 
 
 @router.delete("/{room_id}", summary="Delete room by ID in the hotel")
 async def delete_room_by_id(
+    db: DBDep,
     hotel_id: int = Path(description="ID of the hotel", gt=0),
     room_id: int = Path(description="ID of the room", gt=0),
 ):
     """ Delete room by ID """
 
-    async with async_session_maker() as session:
-        await RoomsRepository(session).delete(id=room_id)
-        await session.commit()
+    await db.rooms.delete(id=room_id, hotel_id=hotel_id)
+    await db.commit()
     return JSONResponse(status_code=200, content={"detail": "Room deleted"})
 
 
 @router.patch("/{room_id}", summary="Update room by ID in the hotel with partial parameters list")
 async def update_room_partial_data(
-        hotel_id: int = Path(description="ID of the hotel", gt=0),
-        room_id: int = Path(description="ID of the room", gt=0),
-        room_data: RoomPartialData = Body(openapi_examples={
-            "Room 1": Example(
-                summary = "Change room title, price and description",
-                value = {
-                    "title": "The Biggest Room",
-                    "description": "A biggest room with a view of the ocean",
-                    "price": 1000
-                    }
-            ),
-        })
+    db: DBDep,
+    hotel_id: int = Path(description="ID of the hotel", gt=0),
+    room_id: int = Path(description="ID of the room", gt=0),
+    room_data: RoomPartialData = Body(openapi_examples={
+        "Room 1": Example(
+            summary = "Change room title, price and description",
+            value = {
+                "title": "The Biggest Room",
+                "description": "A biggest room with a view of the ocean",
+                "price": 1000
+                }
+        ),
+    })
     ):
     """ Partial Update room by ID and partial parameters list """
 
-    async with async_session_maker() as session:
-        room_edited = await RoomsRepository(session).edit(room_data, id=room_id, partial_update=True)
-        await session.commit()
+    room_edited = await db.rooms.edit(room_data, id=room_id, hotel_id=hotel_id, partial_update=True)
+    await db.commit()
     return JSONResponse(status_code=200, content={"detail": "Room updated", "data": room_edited.model_dump()})

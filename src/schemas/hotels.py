@@ -3,7 +3,7 @@ Pydantic schemas for Hotels
 """
 
 from datetime import time
-from typing import Optional, get_type_hints
+from typing import Optional
 from pydantic import BaseModel, Field
 
 
@@ -21,8 +21,8 @@ class HotelCreateData(HotelBaseModel):
     pass
 
 class HotelPartialData(HotelBaseModel):
-    title: Optional[get_type_hints(HotelBaseModel)["title"]] = None
-    location: Optional[get_type_hints(HotelBaseModel)["location"]] = None
-    stars: Optional[get_type_hints(HotelBaseModel)["stars"]] = None
-    check_in: Optional[get_type_hints(HotelBaseModel)["check_in"]] = None
-    check_out: Optional[get_type_hints(HotelBaseModel)["check_out"]] = None
+    title: Optional[str] = None
+    location: Optional[str] = None
+    stars: Optional[int] = None
+    check_in: Optional[time] = None
+    check_out: Optional[time] = None

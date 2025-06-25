@@ -6,11 +6,26 @@ from src.models.hotels import HotelsORM
 from src.models.rooms import RoomsORM, RoomTypesORM
 from src.models.bookings import BookingsORM
 from src.models.users import UsersORM
+from src.models.facilities import FacilitiesORM
 
 from src.db import Base, async_session_maker
 
 
 # Test data for the app
+
+# Facilities
+"""
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    title: Mapped[str] = mapped_column(String(100), nullable=False)
+    description: Mapped[Optional[str | None]] = mapped_column(String(255), nullable=True)
+"""
+facilities = [
+    FacilitiesORM(id=1, title='Free Wi-Fi', description='High-speed wireless internet access throughout the property'),
+    FacilitiesORM(id=2, title='Air Conditioning', description='Climate control system for optimal room temperature'),
+    FacilitiesORM(id=3, title='Mini Bar', description='In-room refrigerated bar with beverages and snacks'),
+    FacilitiesORM(id=4, title='Room Service', description='24/7 in-room dining service available'),
+    FacilitiesORM(id=5, title='Flat Screen TV', description='High-definition television with cable channels'),
+]
 
 # Hotels
 """
@@ -169,7 +184,8 @@ if __name__ == "__main__":
     print("2. Rooms")
     print("3. Hotels")
     print("4. Bookings")
-    print("5. All")
+    print("5. Facilities")
+    print("6. All")
     choice = input("Enter the number of the option: ")
     if choice == "1":
         print("Replacing room types...")
@@ -192,11 +208,17 @@ if __name__ == "__main__":
         loop.run_until_complete(delete_db_data(BookingsORM))
         loop.run_until_complete(add_data_to_db(bookings, BookingsORM))
     elif choice == "5":
+        print("Replacing facilities...")
+        loop.run_until_complete(delete_db_data(FacilitiesORM))
+        loop.run_until_complete(add_data_to_db(facilities, FacilitiesORM))
+    elif choice == "6":
         print("Replacing all...")
         loop.run_until_complete(delete_db_data(BookingsORM))
         loop.run_until_complete(delete_db_data(RoomsORM))
         loop.run_until_complete(delete_db_data(RoomTypesORM))
         loop.run_until_complete(delete_db_data(HotelsORM))
+        loop.run_until_complete(delete_db_data(FacilitiesORM))
+        loop.run_until_complete(add_data_to_db(facilities, FacilitiesORM))
         loop.run_until_complete(add_data_to_db(hotels, HotelsORM))
         loop.run_until_complete(add_data_to_db(room_types, RoomTypesORM))
         loop.run_until_complete(add_data_to_db(rooms, RoomsORM))

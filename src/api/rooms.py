@@ -1,3 +1,4 @@
+from datetime import date
 from fastapi import APIRouter, HTTPException, Path, Query, Body
 import logging
 
@@ -6,33 +7,26 @@ from fastapi.responses import JSONResponse
 
 from src.api.dependencies import DBDep
 from src.schemas.rooms import RoomCreateModel, RoomCreateRequest, RoomPartialData
-from src.repositories.rooms import RoomsRepository
 
 logger = logging.getLogger("uvicorn")
 
-router = APIRouter(prefix="/hotels/{hotel_id}/rooms", tags=["Rooms"])
+router = APIRouter(tags=["Rooms"])
 
 
-@router.get("/", summary="Get all rooms in the hotel_id")
-async def get_rooms_by_hotel_id(
+@router.get("/rooms/available", summary="Get all available rooms")
+async def get_available_rooms(
     db: DBDep,
-    hotel_id: int = Path(description="ID of the hotel", 
-                            gt=0, 
-                            openapi_examples={
-                                "Hotel ID=1": Example(
-                                    summary = "Get all rooms by hotel ID=1",
-                                    value = 1
-                                ),
-                            })
+    check_in: date = Query(description="Check-in date", example="2025-07-01"),
+    check_out: date = Query(description="Check-out date", example="2025-07-20")
 ):
-    """ Get all rooms by hotel ID """
-    rooms = await db.rooms.get_all(hotel_id=hotel_id)
+    """ Get all available rooms for given check-in and check-out dates """
+    rooms = await db.rooms.get_available_rooms(check_in, check_out)
     if not rooms:
-        raise HTTPException(status_code=404, detail=f"Rooms not found for hotel_id: {hotel_id}")
+        raise HTTPException(status_code=404, detail=f"Rooms not found for check_in: {check_in} and check_out: {check_out}")
     return rooms
 
 
-@router.get("/{room_id}", summary="Get room by ID")
+@router.get("/hotels/{hotel_id}/rooms/{room_id}", summary="Get room by ID")
 async def get_room_by_id(
     db: DBDep,
     hotel_id: int = Path(description="ID of the hotel", gt=0, openapi_examples={
@@ -56,7 +50,7 @@ async def get_room_by_id(
     return room
 
 
-@router.post("/", summary="Create new room in the hotel")
+@router.post("/hotels/{hotel_id}/rooms", summary="Create new room in the hotel")
 async def create_room(
     db: DBDep,
     hotel_id: int = Path(description="ID of the hotel", gt=0, openapi_examples={
@@ -92,7 +86,7 @@ async def create_room(
     return JSONResponse(status_code=200, content={"detail": "Room created", "data": room_added.model_dump()})
 
 
-@router.put("/{room_id}", summary="Update room with full parameters list")
+@router.put("/hotels/{hotel_id}/rooms/{room_id}", summary="Update room with full parameters list")
 async def edit_room_full_data(
     db: DBDep,
     hotel_id: int = Path(description="ID of the hotel", gt=0),
@@ -122,7 +116,7 @@ async def edit_room_full_data(
     return JSONResponse(status_code=200, content={"detail": "Room updated", "data": room_edited.model_dump()})
 
 
-@router.delete("/{room_id}", summary="Delete room by ID in the hotel")
+@router.delete("/hotels/{hotel_id}/rooms/{room_id}", summary="Delete room by ID in the hotel")
 async def delete_room_by_id(
     db: DBDep,
     hotel_id: int = Path(description="ID of the hotel", gt=0),
@@ -135,7 +129,7 @@ async def delete_room_by_id(
     return JSONResponse(status_code=200, content={"detail": "Room deleted"})
 
 
-@router.patch("/{room_id}", summary="Update room by ID in the hotel with partial parameters list")
+@router.patch("/hotels/{hotel_id}/rooms/{room_id}", summary="Update room by ID in the hotel with partial parameters list")
 async def update_room_partial_data(
     db: DBDep,
     hotel_id: int = Path(description="ID of the hotel", gt=0),

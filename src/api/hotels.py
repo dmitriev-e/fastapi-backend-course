@@ -1,3 +1,4 @@
+from datetime import date
 from fastapi import APIRouter, HTTPException, Path, Query, Body, status
 import logging
 from typing import List
@@ -13,20 +14,24 @@ logger = logging.getLogger("uvicorn")
 router = APIRouter(prefix="/hotels", tags=["Hotels"])
 
 
-@router.get("/", response_model=List[Hotel])
+@router.get("/", response_model=List[Hotel], summary="Get list of available hotels for given check-in and check-out dates")
 async def get_hotels(
     db: DBDep,
     title: str | None = Query(default=None, description="Title of the hotel", min_length=2),
     location: str | None = Query(default=None, description="Location of the hotel", min_length=2),
     page: int = Query(default=1, description="Page number", ge=1),
-    per_page: int = Query(default=3, description="Number of items per page", ge=1, le=100),    
+    per_page: int = Query(default=3, description="Number of items per page", ge=1, le=100),
+    check_in: date = Query(description="Check-in date", example="2025-07-01"),
+    check_out: date = Query(description="Check-out date", example="2025-07-20")
 ):
-    """ Get list of hotels """
-    hotels = await db.hotels.get_all( 
-            title=title, 
-            location=location,
+    """ Get list of available hotels for given check-in and check-out dates """
+    hotels = await db.hotels.get_available_hotels( 
+            check_in=check_in,
+            check_out=check_out,
             limit=per_page,
-            offset=(page - 1) * per_page
+            offset=(page - 1) * per_page,
+            title=title, 
+            location=location
         )
     return hotels
 

@@ -21,7 +21,8 @@ class RoomsORM(Base):
     hotel = relationship("HotelsORM", back_populates="rooms")
     room_type = relationship("RoomTypesORM", back_populates="rooms")
     bookings = relationship("BookingsORM", back_populates="room")
-    
+    facilities = relationship("RoomsFacilitiesORM", back_populates="room")
+
 class RoomTypesORM(Base):
     __tablename__ = "room_types"
     id: Mapped[int] = mapped_column(primary_key=True)

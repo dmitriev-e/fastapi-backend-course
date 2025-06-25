@@ -10,6 +10,7 @@ from src.repositories.hotels import HotelsRepository
 from src.repositories.rooms import RoomsRepository
 from src.repositories.users import UsersRepository
 from src.repositories.bookings import BookingsRepository
+from src.repositories.faciliries import FacilitiesRepository
 
 def get_token(request: Request):
     """Get the token from the request"""
@@ -44,6 +45,7 @@ class DBManager:
         self.hotels = HotelsRepository(self.session)
         self.users = UsersRepository(self.session)
         self.bookings = BookingsRepository(self.session)
+        self.facilities = FacilitiesRepository(self.session)
         
         return self
 

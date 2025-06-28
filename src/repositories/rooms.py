@@ -44,6 +44,18 @@ class RoomsRepository(BaseRepository):
         result_scalars = result.scalars().all()
         return [self.schema.model_validate(res, from_attributes=True) for res in result_scalars]
 
+    async def get_one_or_none(self, **filter_by):
+        query = (
+            select(self.model)
+            .options(selectinload(self.model.facilities))
+            .filter_by(**filter_by)
+        )
+        result = await self.session.execute(query)
+        res = result.scalars().one_or_none()
+        if res is None:
+            return None
+        return self.schema.model_validate(res, from_attributes=True)
+
 class RoomTypesRepository(BaseRepository):
     model = RoomTypesORM
     schema = RoomType

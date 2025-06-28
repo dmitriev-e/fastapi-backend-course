@@ -54,10 +54,15 @@ class BaseRepository:
             case 0:
                 raise HTTPException(status_code=404, detail="Record not found")
             case 1:
-                update_stmt = update(self.model).values(**data.model_dump(exclude_unset=partial_update)).filter_by(**filter_by).returning(self.model)
-                result = await self.session.execute(update_stmt)
-                res = result.scalars().one()
-                return self.schema.model_validate(res, from_attributes=True)
+                data_to_update = data.model_dump(exclude_unset=partial_update)
+                print(data_to_update)
+                if data_to_update:
+                    update_stmt = update(self.model).values(**data_to_update).filter_by(**filter_by).returning(self.model)
+                    result = await self.session.execute(update_stmt)
+                    res = result.scalars().one()
+                    return self.schema.model_validate(res, from_attributes=True)
+                else:
+                    return await self.get_one_or_none(**filter_by)
             case _:
                 raise HTTPException(status_code=400, detail="Multiple records found")
 
@@ -74,4 +79,10 @@ class BaseRepository:
                 await self.session.execute(delete_stmt)
             case _:
                 raise HTTPException(status_code=400, detail="Multiple records found")
+
+    # Repository Template for deleting bulk records from database
+    async def delete_bulk(self, data: list[int]):
+        """ Delete bulk records from database by list of IDs """
+        delete_stmt = delete(self.model).filter(self.model.id.in_(data))
+        await self.session.execute(delete_stmt)
             

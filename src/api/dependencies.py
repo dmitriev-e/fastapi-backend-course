@@ -7,10 +7,11 @@ from src.db import async_session_maker
 
 # repositories
 from src.repositories.hotels import HotelsRepository
-from src.repositories.rooms import RoomsRepository
+from src.repositories.rooms import RoomsRepository, RoomTypesRepository
 from src.repositories.users import UsersRepository
 from src.repositories.bookings import BookingsRepository
-from src.repositories.faciliries import FacilitiesRepository
+from src.repositories.faciliries import FacilitiesRepository, RoomsFacilitiesRepository
+
 
 def get_token(request: Request):
     """Get the token from the request"""
@@ -46,7 +47,9 @@ class DBManager:
         self.users = UsersRepository(self.session)
         self.bookings = BookingsRepository(self.session)
         self.facilities = FacilitiesRepository(self.session)
-        
+        self.rooms_facilities = RoomsFacilitiesRepository(self.session)
+        self.room_types = RoomTypesRepository(self.session)
+
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):

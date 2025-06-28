@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 
 from src.api.dependencies import DBDep
 from src.schemas.rooms import RoomCreateModel, RoomCreateRequest, RoomPartialData
+from src.schemas.facilities import RoomsFacilitiesCreateRequest
 
 logger = logging.getLogger("uvicorn")
 
@@ -67,7 +68,9 @@ async def create_room(
             "number": "301",
             "title": "Ocean View Suite",
             "description": "A luxurious suite with ocean views.",
-            "price": 100}
+            "price": 100,
+            "facilities": [1, 2]
+            }
     ),
     "Room 2": Example(
             summary = "Ocean View Hotel - Double Room - Ocean View Double",
@@ -76,12 +79,28 @@ async def create_room(
             "number": "302",
             "title": "Ocean View Double",
             "description": "A double room with ocean views.",
-            "price": 200}
+            "price": 200,
+            "facilities": [1, 2, 3, 4]
+            }
     )
 }) ):
-    """ Create new room in Database"""
+    """ Create new room in the Hotel"""
     _room_data = RoomCreateModel(**room_data.model_dump(), hotel_id=hotel_id)
     room_added = await db.rooms.add(_room_data)
+    if room_data.facilities:
+        # == Check if all facilities exist in DB
+        good_facilities, error_facilities = [], []
+        facilities_db_list = [facility.id for facility in await db.facilities.get_all()]
+        for facility_id in room_data.facilities:
+            if facility_id in facilities_db_list:
+                good_facilities.append(facility_id)
+            else:
+                error_facilities.append(facility_id)
+        if error_facilities:
+            raise HTTPException(status_code=404, detail=f"Facility with id {error_facilities} not found")
+        # ==
+        _facilities_data = [RoomsFacilitiesCreateRequest(room_id=room_added.id, facility_id=facility_id) for facility_id in good_facilities]
+        await db.rooms_facilities.add_bulk(_facilities_data)
     await db.commit()
     return JSONResponse(status_code=200, content={"detail": "Room created", "data": room_added.model_dump()})
 
@@ -104,7 +123,8 @@ async def edit_room_full_data(
                 "number": "301",
                 "title": "The Grand Room",
                 "description": "A grand room with a view of the ocean.",
-                "price": 100
+                "price": 100,
+                "facilities": [1, 2, 3, 4]
                 }
         ),
     })

@@ -36,6 +36,14 @@ class BaseRepository:
         except IntegrityError as e:
             raise e
 
+    # Repository Template for adding new record to database
+    async def add_bulk(self, data: list[BaseModel]):
+        try:
+            add_stmt = insert(self.model).values([item.model_dump() for item in data])
+            await self.session.execute(add_stmt)
+        except IntegrityError as e:
+            raise e
+
     # Repository Template for editing record in database
     async def edit(self, data: BaseModel, partial_update: bool = False, **filter_by):
         # If record exists, update it and the only one

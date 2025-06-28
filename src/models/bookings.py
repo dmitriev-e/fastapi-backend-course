@@ -17,4 +17,4 @@ class BookingsORM(Base):
     total_price: Mapped[float] = mapped_column(Float, nullable=False)
 
     user = relationship("UsersORM", back_populates="bookings")
-    room = relationship("RoomsORM", back_populates="bookings")
+    rooms = relationship("RoomsORM", back_populates="bookings")

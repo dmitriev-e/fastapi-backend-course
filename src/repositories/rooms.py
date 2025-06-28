@@ -4,11 +4,11 @@ from sqlalchemy.orm import selectinload
 from src.models.bookings import BookingsORM
 from src.repositories.base import BaseRepository
 from src.models.rooms import RoomsORM, RoomTypesORM
-from src.schemas.rooms import Room, RoomType
+from src.schemas.rooms import RoomType, RoomsWithFacilities
 
 class RoomsRepository(BaseRepository):
     model = RoomsORM
-    schema = Room
+    schema = RoomsWithFacilities
 
     async def get_available_rooms(self, check_in: date, check_out: date):
         # Define the CTE (Common Table Expression) for rooms_booked
@@ -31,16 +31,18 @@ class RoomsRepository(BaseRepository):
         
         # Main query to get available rooms
         available_rooms_query = (
-            select(RoomsORM)
+            select(self.model)
+            .options(selectinload(self.model.facilities))
             .where(
-                RoomsORM.id.not_in(
+                self.model.id.not_in(
                     select(rooms_booked_cte.c.room_id)
                 )
             )
         )
 
         result = await self.session.execute(available_rooms_query)
-        return [self.schema.model_validate(res, from_attributes=True) for res in result.scalars().all()]
+        result_scalars = result.scalars().all()
+        return [self.schema.model_validate(res, from_attributes=True) for res in result_scalars]
 
 class RoomTypesRepository(BaseRepository):
     model = RoomTypesORM

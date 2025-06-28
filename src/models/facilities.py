@@ -15,7 +15,13 @@ class FacilitiesORM(Base):
     title: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[Optional[str | None]] = mapped_column(String(255), nullable=True)
 
-    rooms = relationship("RoomsFacilitiesORM", back_populates="facility")
+    rooms: Mapped[list["RoomsORM"]] = relationship(
+        "RoomsORM",
+        back_populates="facilities",
+        secondary="rooms_facilities",
+        primaryjoin="FacilitiesORM.id == RoomsFacilitiesORM.facility_id",
+        secondaryjoin="RoomsORM.id == RoomsFacilitiesORM.room_id"
+    )
 
 
 class RoomsFacilitiesORM(Base):
@@ -24,7 +30,4 @@ class RoomsFacilitiesORM(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     room_id: Mapped[int] = mapped_column(Integer, ForeignKey("rooms.id"))
     facility_id: Mapped[int] = mapped_column(Integer, ForeignKey("facilities.id"))
-
-    room = relationship("RoomsORM", back_populates="facilities")
-    facility = relationship("FacilitiesORM", back_populates="rooms")
     

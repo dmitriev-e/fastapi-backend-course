@@ -4,6 +4,7 @@ Pydantic schemas for Rooms and Room Types
 
 from typing import Optional, get_type_hints
 from pydantic import BaseModel, Field
+from src.schemas.facilities import Facilities
 
 # Rooms
 class RoomBaseModel(BaseModel):
@@ -46,3 +47,6 @@ class RoomType(RoomTypeBaseModel):
 
 class RoomTypeCreateData(RoomTypeBaseModel):
     pass
+
+class RoomsWithFacilities(Room):
+    facilities: list[Facilities] | None = Field(description="List of facilities")

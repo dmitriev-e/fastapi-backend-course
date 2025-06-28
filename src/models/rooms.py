@@ -20,8 +20,15 @@ class RoomsORM(Base):
     
     hotel = relationship("HotelsORM", back_populates="rooms")
     room_type = relationship("RoomTypesORM", back_populates="rooms")
-    bookings = relationship("BookingsORM", back_populates="room")
-    facilities = relationship("RoomsFacilitiesORM", back_populates="room")
+    bookings = relationship("BookingsORM", back_populates="rooms")
+    facilities: Mapped[list["FacilitiesORM"]] = relationship(
+        "FacilitiesORM",
+        back_populates="rooms",
+        secondary="rooms_facilities",
+        primaryjoin="RoomsORM.id == RoomsFacilitiesORM.room_id",
+        secondaryjoin="FacilitiesORM.id == RoomsFacilitiesORM.facility_id"
+        )
+
 
 class RoomTypesORM(Base):
     __tablename__ = "room_types"

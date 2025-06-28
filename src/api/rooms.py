@@ -175,10 +175,10 @@ async def update_room_partial_data(
 
 @router.delete("/hotels/{hotel_id}/rooms/{room_id}", summary="Delete room by ID in the hotel")
 async def delete_room_by_id(
-    db: DBDep,
-    hotel_id: int = Path(description="ID of the hotel", gt=0),
-    room_id: int = Path(description="ID of the room", gt=0),
-):
+        db: DBDep,
+        hotel_id: int = Path(description="ID of the hotel", gt=0),
+        room_id: int = Path(description="ID of the room", gt=0),
+    ):
     """ Delete room by ID """
 
     await db.rooms.delete(id=room_id, hotel_id=hotel_id)
